@@ -12,9 +12,6 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "env": {
-                "AWS_PROFILE": "adminuser"
-            }
         }
     ]
 }

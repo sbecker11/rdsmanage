@@ -4,12 +4,17 @@ import boto3
 import botocore.session
 import sys
 import os
+from dotenv import load_dotenv
+import warnings
+warnings.filterwarnings('ignore', category=FutureWarning, module='botocore.client')
 
-if 'AWS_PROFILE' not in os.environ:
-    print("ERROR: missing required AWS_PROFILE envvar")
+load_dotenv()
+
+AWS_PROFILE = os.getenv('AWS_PROFILE', None)
+
+if AWS_PROFILE is None:
+    print("ERROR: .env file missing required AWS_PROFILE")
     sys.exit(1)
-
-AWS_PROFILE = os.environ['AWS_PROFILE']
 
 # Create an empty botocore session directly
 session = botocore.session.Session()
@@ -17,12 +22,15 @@ session = botocore.session.Session()
 # Get config of desired profile. full_config is a standard python dictionary.
 profiles_config = session.full_config.get("profiles", {})
 AWS_REGION = profiles_config[AWS_PROFILE]['region']
+if not AWS_REGION:
+      print("ERROR: AWS_REGION not found in AWS_PROFILE")
+      sys.exit(1)
 
 rds_client = boto3.client('rds', region_name=AWS_REGION)
 
-
 db_instance_info = rds_client.describe_db_instances()
-print(f"num_db_instances: {len(db_instance_info['DBInstances'])}")
+num_db_instances = len(db_instance_info['DBInstances'])
+print(f"processing {num_db_instances} db_instances")
 
 for each_db in db_instance_info['DBInstances']:
     response = rds_client.list_tags_for_resource(ResourceName=each_db['DBInstanceArn'])
