@@ -1,7 +1,7 @@
 # adapted from http://db.geeksinsight.com/2017/08/10/aws-rds-stop-start-script/
 
 import boto3
-import logging
+import botocore.session
 import sys
 import os
 
@@ -11,9 +11,18 @@ if 'AWS_PROFILE' not in os.environ:
 
 AWS_PROFILE = os.environ['AWS_PROFILE']
 
-rds_client = boto3.client('rds', region_name="sa-east-1")
+# Create an empty botocore session directly
+session = botocore.session.Session()
+
+# Get config of desired profile. full_config is a standard python dictionary.
+profiles_config = session.full_config.get("profiles", {})
+AWS_REGION = profiles_config[AWS_PROFILE]['region']
+
+rds_client = boto3.client('rds', region_name=AWS_REGION)
+
 
 db_instance_info = rds_client.describe_db_instances()
+print(f"num_db_instances: {len(db_instance_info['DBInstances'])}")
 
 for each_db in db_instance_info['DBInstances']:
     response = rds_client.list_tags_for_resource(ResourceName=each_db['DBInstanceArn'])
@@ -64,7 +73,6 @@ for each_db in db_instance_info['DBInstances']:
               db=each_db['DBInstanceIdentifier']
               status=each_db['DBInstanceStatus']
               print( db +':'+ status )
-print("done")
 
 # Sample Run To check the status, start and stop
 
